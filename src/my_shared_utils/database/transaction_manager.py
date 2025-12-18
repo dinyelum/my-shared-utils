@@ -4,7 +4,7 @@ Database transaction script
 """
 
 import config
-import mysql.connector as mysqlconn
+import MySQLdb
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Union
 
@@ -16,14 +16,30 @@ class DatabaseTransactionManager:
         self.conn = None
         self.cursor = None
 
+        print(self.table)
+
     def __enter__(self):
         """Context manager entry"""
-        self.conn = mysqlconn.connect(
-            host=config.DB_HOST, user=config.DB_USER, password=config.DB_PASS, database=config.DB_NAME)
-        # self.conn.row_factory = sqlite3.Row  # Return rows as dictionaries
-        self.cursor = self.conn.cursor()
-        # self._create_table_if_not_exists()
-        return self
+        try:
+            self.conn = MySQLdb.connect(
+                host=config.DB_HOST,
+                user=config.DB_USER,
+                password=config.DB_PASS,
+                database=config.DB_NAME
+            )
+
+            self.cursor = self.conn.cursor()
+            return self
+
+        except MySQLdb.Error as e:
+            print(f"MYSQL ERROR in __enter__: {type(e).__name__}: {e}")
+            print(
+                f"Error details: errno={getattr(e, 'errno', 'N/A')}, sqlstate={getattr(e, 'sqlstate', 'N/A')}")
+            raise
+
+        except Exception as e:
+            print(f"GENERAL ERROR in __enter__: {type(e).__name__}: {e}")
+            raise
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit - commit and close connection"""
@@ -42,6 +58,7 @@ class DatabaseTransactionManager:
             columns: Column names (required if data is list of tuples)
         """
         if not data:
+            print("No data")
             return
 
         # Handle different input formats
@@ -63,8 +80,9 @@ class DatabaseTransactionManager:
         placeholders = ", ".join(["%s"] * len(columns))
         column_list = ", ".join(columns)
 
-        self.sql = f"INSERT {'ignore' if ignore == True else ''} INTO records ({column_list}) VALUES ({placeholders})"
+        self.sql = f"INSERT {'ignore' if ignore == True else ''} INTO {self.table} ({column_list}) VALUES ({placeholders})"
         self.params = values
+        print(f"{self.params} {len(self.params)} {self.sql}")
 
         if returnself == True:
             return self
@@ -72,17 +90,17 @@ class DatabaseTransactionManager:
         return self.run()
 
     def on_duplicate_key(self, query, params=None):
-        if params is None:
-            params = []
         self.sql += f" ON DUPLICATE KEY {query} "
-        self.params.append(params)
-        return self.run()
+        if params:
+            self.params.append(params)
+        return self
 
     def returnrow(self, returnrow: Union['id', list] = 'id'):
         id = self.cursor.lastrowid
         if returnrow == True:
             return self.select(', '.join(returnrow)).where(f"id={id}")
-        return id
+        self.run()
+        return self.cursor.lastrowid
 
     def select(self, columns='*'):
         """Start building a SELECT query"""
@@ -147,65 +165,3 @@ class DatabaseTransactionManager:
         else:
             self.cursor.execute(self.sql, self.params)
             return self.cursor.rowcount
-
-
-def main():
-    """Main execution function"""
-    # Configuration
-    DB_FILE = 'sample.db'
-    JSON_FILE = 'database_export.json'
-    GIT_COMMIT_MESSAGE = f"Database export {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-
-    print("Starting database transaction process...")
-    print("-" * 50)
-
-    # Step 1: Database operations
-    try:
-        with DatabaseTransactionManager(DB_FILE) as db:
-            # Insert sample data
-            inserted_count = db.insert_sample_data()
-
-            # Insert additional custom data
-            db.insert_custom_data("Alice Brown", "alice@example.com")
-
-            # Select all rows
-            all_data = db.select_all_rows()
-
-            # Print to console
-            db.print_to_console(all_data)
-
-            # Save to JSON
-            json_path = db.save_to_json(all_data, JSON_FILE)
-
-    except sqlite3.Error as e:
-        print(f"Database error: {e}")
-        return
-
-    print("\n" + "="*50)
-    print("Git Operations:")
-    print("="*50)
-
-    # Step 2: Git operations
-    git = GitManager()
-
-    # Check git status first
-    git.git_status()
-
-    # Stage the JSON file
-    git.git_add(JSON_FILE)
-
-    # Commit changes
-    git.git_commit(GIT_COMMIT_MESSAGE)
-
-    # Push to remote (uncomment when ready)
-    # git.git_push()
-
-    print("\n" + "="*50)
-    print("Process completed successfully!")
-    print(f"Database: {DB_FILE}")
-    print(f"JSON Export: {JSON_FILE}")
-    print("="*50)
-
-
-if __name__ == "__main__":
-    main()
