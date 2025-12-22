@@ -16,8 +16,6 @@ class DatabaseTransactionManager:
         self.conn = None
         self.cursor = None
 
-        print(self.table)
-
     def __enter__(self):
         """Context manager entry"""
         try:
@@ -82,7 +80,6 @@ class DatabaseTransactionManager:
 
         self.sql = f"INSERT {'ignore' if ignore == True else ''} INTO {self.table} ({column_list}) VALUES ({placeholders})"
         self.params = values
-        print(f"{self.params} {len(self.params)} {self.sql}")
 
         if returnself == True:
             return self
@@ -102,12 +99,15 @@ class DatabaseTransactionManager:
         self.run()
         return self.cursor.lastrowid
 
-    def select(self, columns='*'):
+    def select(self, columns='*', returncolumns=False):
         """Start building a SELECT query"""
         if isinstance(columns, list):
-            columns_str = ", ".join(columns)
+            columns = ", ".join(columns)
 
-        self.sql = f"SELECT {columns_str} FROM {self.table}"
+        if returncolumns == True:
+            self.cursor = self.conn.cursor(MySQLdb.cursors.DictCursor)
+
+        self.sql = f"SELECT {columns} FROM {self.table}"
         self.params = []
         return self
 
@@ -165,3 +165,7 @@ class DatabaseTransactionManager:
         else:
             self.cursor.execute(self.sql, self.params)
             return self.cursor.rowcount
+
+
+class DTMError(MySQLdb.Error):
+    pass

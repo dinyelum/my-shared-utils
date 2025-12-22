@@ -1,10 +1,19 @@
 import subprocess
+import os
 
 
 class GitManager:
+    def __init__(self, repo=None):
+        # if repo==None, current repo is used
+        if repo:
+            os.chdir(repo)
+            print(repo)
+            print(f"Current directory: {os.getcwd()}")
+
     @staticmethod
     def git_add(file_path: str):
         """Stage file for git commit"""
+        print(f"Current directory: {os.getcwd()}")
         try:
             subprocess.run(['git', 'add', file_path],
                            check=True, capture_output=True)
@@ -26,7 +35,7 @@ class GitManager:
     def git_push():
         """Push changes to remote repository"""
         try:
-            result = subprocess.run(['git', 'push'],
+            result = subprocess.run(['git', 'push', 'gh_origin'],
                                     check=True, capture_output=True, text=True)
             print("Git: Successfully pushed to remote repository")
             print(result.stdout)
