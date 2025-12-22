@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="my-shared-utils",
-    version="1.0.3",
+    version="1.1.0",
     # packages=find_packages(),
     packages=find_packages(where="src"),
     package_dir={"": "src"},
