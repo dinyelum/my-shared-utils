@@ -32,10 +32,10 @@ class GitManager:
             print(f"Git commit failed: {e.stderr.decode()}")
 
     @staticmethod
-    def git_push():
+    def git_push(origin):
         """Push changes to remote repository"""
         try:
-            result = subprocess.run(['git', 'push', 'gh_origin'],
+            result = subprocess.run(['git', 'push', origin],
                                     check=True, capture_output=True, text=True)
             print("Git: Successfully pushed to remote repository")
             print(result.stdout)

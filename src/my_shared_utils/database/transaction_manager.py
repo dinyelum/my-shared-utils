@@ -166,6 +166,12 @@ class DatabaseTransactionManager:
             self.cursor.execute(self.sql, self.params)
             return self.cursor.rowcount
 
+    def custom_query(self, query, queryvalues: list):
+        queryvalues = queryvalues or []
+        self.sql = query
+        self.params = queryvalues
+        return self.run()
+
 
 class DTMError(MySQLdb.Error):
     pass
