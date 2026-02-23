@@ -3,7 +3,7 @@
 Database transaction script
 """
 
-import config
+from . import config
 import MySQLdb
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Union
