@@ -3,15 +3,15 @@
 Database transaction script
 """
 
-from . import config
 import MySQLdb
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Union
 
 
 class DatabaseTransactionManager:
-    def __init__(self, table: str):
+    def __init__(self, config, table: str):
         """Initialize database connection"""
+        self.config = config
         self.table = table
         self.conn = None
         self.cursor = None
@@ -20,10 +20,10 @@ class DatabaseTransactionManager:
         """Context manager entry"""
         try:
             self.conn = MySQLdb.connect(
-                host=config.DB_HOST,
-                user=config.DB_USER,
-                password=config.DB_PASS,
-                database=config.DB_NAME
+                host=self.config.DB_HOST,
+                user=self.config.DB_USER,
+                password=self.config.DB_PASS,
+                database=self.config.DB_NAME
             )
 
             self.cursor = self.conn.cursor()
