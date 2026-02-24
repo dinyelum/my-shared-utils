@@ -3,41 +3,28 @@
 Database transaction script
 """
 
-import MySQLdb
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Union
 
 
 class DatabaseTransactionManager:
-    def __init__(self, config, table: str):
+    def __init__(self, connector_factory, table: str):
         """Initialize database connection"""
-        self.config = config
+        self.connector_factory = connector_factory
         self.table = table
         self.conn = None
         self.cursor = None
+        self._native_dict_cursor = False
+        self._return_dict = False
 
     def __enter__(self):
         """Context manager entry"""
         try:
-            self.conn = MySQLdb.connect(
-                host=self.config.DB_HOST,
-                user=self.config.DB_USER,
-                password=self.config.DB_PASS,
-                database=self.config.DB_NAME
-            )
-
+            self.conn = self.connector_factory()
             self.cursor = self.conn.cursor()
             return self
-
-        except MySQLdb.Error as e:
-            print(f"MYSQL ERROR in __enter__: {type(e).__name__}: {e}")
-            print(
-                f"Error details: errno={getattr(e, 'errno', 'N/A')}, sqlstate={getattr(e, 'sqlstate', 'N/A')}")
-            raise
-
         except Exception as e:
-            print(f"GENERAL ERROR in __enter__: {type(e).__name__}: {e}")
-            raise
+            raise DTMError(f"Database connection failed: {e}")
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit - commit and close connection"""
@@ -97,13 +84,23 @@ class DatabaseTransactionManager:
         rows = '*' if returnrow == True else returnrow
         return self.select(rows).where(f"id={id}")
 
-    def select(self, columns='*', returncolumns=False):
+    def select(self, columns='*', return_dict=False):
         """Start building a SELECT query"""
         if isinstance(columns, list):
             columns = ", ".join(columns)
 
-        if returncolumns == True:
-            self.cursor = self.conn.cursor(MySQLdb.cursors.DictCursor)
+        self._native_dict_cursor = False
+        self._return_dict = return_dict
+
+        if return_dict:
+            try:
+                self.cursor = self.conn.cursor(dictionary=True)
+                self._native_dict_cursor = True
+            except TypeError:
+                # fallback for drivers without dict cursor
+                self.cursor = self.conn.cursor()
+        else:
+            self.cursor = self.conn.cursor()
 
         self.sql = f"SELECT {columns} FROM {self.table}"
         self.params = []
@@ -153,7 +150,11 @@ class DatabaseTransactionManager:
         if self.sql.startswith('SELECT'):
             self.cursor.execute(self.sql, self.params)
             if fetch_all == True:
-                return self.cursor.fetchall()
+                results = self.cursor.fetchall()
+                if self._return_dict and not self._native_dict_cursor:
+                    columns = [desc[0] for desc in self.cursor.description]
+                    results = [dict(zip(columns, row)) for row in results]
+                return results
             return self.cursor
         elif self.sql.startswith('INSERT'):
             if len(self.params) == 1:
@@ -171,5 +172,5 @@ class DatabaseTransactionManager:
         return self.run()
 
 
-class DTMError(MySQLdb.Error):
+class DTMError(Exception):
     pass
