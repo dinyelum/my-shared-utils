@@ -16,3 +16,4 @@ setup(
     author="Joe",
     description="Shared utilities for Python projects",
 )
+# pipenv install git+https://github.com/dinyelum/my-shared-utils.git@v1.3.1

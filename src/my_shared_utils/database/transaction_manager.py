@@ -92,12 +92,10 @@ class DatabaseTransactionManager:
             self.params.append(params)
         return self
 
-    def returnrow(self, returnrow: Union['id', list] = 'id'):
+    def returnrow(self, returnrow: Union[str, bool] = 'id'):
         id = self.cursor.lastrowid
-        if returnrow == True:
-            return self.select(', '.join(returnrow)).where(f"id={id}")
-        self.run()
-        return self.cursor.lastrowid
+        rows = '*' if returnrow == True else returnrow
+        return self.select(rows).where(f"id={id}")
 
     def select(self, columns='*', returncolumns=False):
         """Start building a SELECT query"""
