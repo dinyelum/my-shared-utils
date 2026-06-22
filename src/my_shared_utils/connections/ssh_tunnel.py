@@ -9,6 +9,7 @@ class SSHTunnel:
         self.proc = None
         self.atexit_registered = False
         self.local_port = config['DB_PORT']
+        self.local_host = config['DB_HOST']
         self.destination_host = config['DB_HOST']
         self.destination_port = config['REMOTE_DB_PORT']
         self.server = f"{config['SSH_USER']}@{config['SSH_HOST']}"
@@ -59,7 +60,7 @@ class SSHTunnel:
 
     def is_port_open(self):
         try:
-            with socket.create_connection((self.destination_host, self.destination_port), 1):
+            with socket.create_connection((self.local_host, self.local_port), 1):
                 return True
         except OSError:
             return False
