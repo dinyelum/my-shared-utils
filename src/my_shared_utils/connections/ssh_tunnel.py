@@ -8,12 +8,12 @@ class SSHTunnel:
     def __init__(self, config: dict):
         self.proc = None
         self.atexit_registered = False
-        self.local_port = config.DB_PORT
-        self.destination_host = config.DB_HOST
-        self.destination_port = config.REMOTE_DB_PORT
-        self.server = f"{config.SSH_USER}@{config.SSH_HOST}"
-        self.ssh_port = config.SSH_PORT
-        self.ssh_log_file = config.SSH_LOG_FILE
+        self.local_port = config['DB_PORT']
+        self.destination_host = config['DB_HOST']
+        self.destination_port = config['REMOTE_DB_PORT']
+        self.server = f"{config['SSH_USER']}@{config['SSH_HOST']}"
+        self.ssh_port = config['SSH_PORT']
+        self.ssh_log_file = config['SSH_LOG_FILE']
 
     def print(self):
         print("Yes")
