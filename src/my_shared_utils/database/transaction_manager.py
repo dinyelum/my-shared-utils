@@ -5,6 +5,7 @@ Database transaction script
 
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Union
+import sys
 
 
 class DatabaseTransactionManager:
@@ -106,17 +107,18 @@ class DatabaseTransactionManager:
         self.params = []
         return self
 
-    def update(self, data: Dict[str, Any]):
-        """Start building an UPDATE query"""
+    def update(self, data: List[Dict[str, Any]]):
+        """Start building an UPDATE query
+
+        Args:
+            data: List of dictionaries
+        """
+        # Doesn't work for update where in(), use custom_query() for that
         if not data:
             raise ValueError("No data provided for update")
 
-        set_clauses = []
-        self.params = []
-
-        for column, value in data.items():
-            set_clauses.append(f"{column} = %s")
-            self.params.append(value)
+        self.params = data
+        set_clauses = [f"{column} = %s" for column in data[0].keys()]
 
         self.sql = f"UPDATE {self.table} SET {', '.join(set_clauses)}"
         return self
@@ -127,14 +129,30 @@ class DatabaseTransactionManager:
         self.params = []
         return self
 
-    def where(self, condition: str, *params):
+    def where(self, condition: str, params: Union[list, tuple, List[Dict[str, Any]]] = None):
         """Add WHERE clause to current query"""
         if 'WHERE' in self.sql:
             self.sql += f" AND {condition}"
         else:
             self.sql += f" WHERE {condition}"
 
-        self.params.extend(params)
+        if self.sql.startswith('UPDATE'):
+            if not params:
+                print("Update queries require where parameters")
+                sys.exit()
+
+            # params have to be list of dict just like update()
+            if not isinstance(params[0], dict):
+                print("params should be in the format List[Dict[str, Any]]")
+                sys.exit()
+
+            all_rows = []
+            for index, row in enumerate(self.params):
+                row_params = (*row.values(), *params[index].values())
+                all_rows.append(row_params)
+            self.params = all_rows
+        else:
+            self.params.extend(params or [])
         return self.run()
 
     def run(self, fetch_all: bool = True):
@@ -156,7 +174,7 @@ class DatabaseTransactionManager:
                     results = [dict(zip(columns, row)) for row in results]
                 return results
             return self.cursor
-        elif self.sql.startswith('INSERT'):
+        elif self.sql.startswith(('INSERT', 'UPDATE')):
             if len(self.params) == 1:
                 self.cursor.execute(self.sql, self.params[0])
             else:
