@@ -81,9 +81,9 @@ class DatabaseTransactionManager:
         return self
 
     def returnrow(self, returnrow: Union[str, bool] = 'id'):
-        id = self.cursor.lastrowid
+        self.run()
         rows = '*' if returnrow == True else returnrow
-        return self.select(rows).where(f"id={id}")
+        return self.select(rows).where(f"id=(SELECT LAST_INSERT_ID())")
 
     def select(self, columns='*', return_dict=False):
         """Start building a SELECT query"""
