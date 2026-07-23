@@ -16,6 +16,13 @@ class SSHTunnel:
         self.ssh_port = config['SSH_PORT']
         self.ssh_log_file = config['SSH_LOG_FILE']
 
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.stop()
+
     def print(self):
         print("Yes")
 
