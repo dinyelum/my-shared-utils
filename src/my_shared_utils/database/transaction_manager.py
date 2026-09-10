@@ -107,6 +107,17 @@ class DatabaseTransactionManager:
         self.params = []
         return self
 
+    def join(self, table_and_alias: str, condition: str, join_type: str = 'inner'):
+        """Add a JOIN clause to the current SELECT query.
+
+        Args:
+            table_and_alias: The table name to join (with optional alias, e.g., 'orders o')
+            condition: The ON condition string (e.g., 'u.id = o.user_id')
+            join_type: Type of join (INNER, LEFT, RIGHT, FULL)
+        """
+        self.sql = f"{self.sql} {join_type} join {table_and_alias} on {condition}"
+        return self
+
     def update(self, data: List[Dict[str, Any]]):
         """Start building an UPDATE query
 
