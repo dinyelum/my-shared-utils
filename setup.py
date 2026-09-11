@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="my-shared-utils",
-    version="2.4.0",
+    version="2.5.0",
     # packages=find_packages(),
     packages=find_packages(where="src"),
     package_dir={"": "src"},
@@ -12,6 +12,11 @@ setup(
         # "mysqlclient>=2.2.7"
         # "mysql-connector-python>=9.4.0",
     ],
+    extras_require={
+        "gemini": ["google-genai"],
+        "apify": ["apify-client"],
+        "all": ["google-genai", "apify-client"]
+    },
     # py_modules=[],  # No top-level modules
     author="Joe",
     description="Shared utilities for Python projects",

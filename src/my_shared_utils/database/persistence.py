@@ -1,4 +1,4 @@
-from transaction_manager import DatabaseTransactionManager, DTMError
+from .transaction_manager import DatabaseTransactionManager, DTMError
 from typing import Union, List, Dict, Any, Iterable
 from pathlib import Path
 import json
