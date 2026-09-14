@@ -83,6 +83,11 @@ class SSHTunnel:
     def stop(self):
         if self.proc and self.proc.poll() is None:
             self.proc.terminate()
+            try:
+                self.proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self.proc.kill()
+                self.proc.wait()
 
     def is_port_open(self):
         try:
