@@ -49,6 +49,22 @@ class SSHTunnel:
                 """
             )
 
+        with open(self.ssh_log_file, "a") as log:
+            self.proc = subprocess.Popen(
+                [
+                    "ssh",
+                    "-N",
+                    "-L", f"{self.local_port}:{self.destination_host}:{self.destination_port}",
+                    self.server,
+                    "-p", self.ssh_port,
+                    "-o", "ExitOnForwardFailure=yes",
+                    "-o", "ServerAliveInterval=20",
+                    "-o", "ServerAliveCountMax=6",
+                ],
+                stdout=subprocess.DEVNULL,
+                stderr=log,
+            )
+
         # Wait until tunnel is usable
         for _ in range(10):
             if self.is_port_open():
