@@ -95,3 +95,17 @@ class SSHTunnel:
                 return True
         except OSError:
             return False
+
+    def try_start(self):
+        """Attempt to start the tunnel, converting any failure into a dual-state
+        result instead of letting the exception propagate.
+
+        Returns:
+            self if the tunnel started successfully, False otherwise.
+        """
+        try:
+            self.start()
+            return self
+        except Exception as e:
+            print(f"SSH tunnel unavailable: {e}")
+            return False
