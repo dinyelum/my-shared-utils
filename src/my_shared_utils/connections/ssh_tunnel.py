@@ -67,6 +67,9 @@ class SSHTunnel:
 
         # Wait until tunnel is usable
         for _ in range(10):
+            if self.proc.poll() is not None:
+                raise RuntimeError(
+                    f"SSH tunnel process exited early (code {self.proc.poll()})...")
             if self.is_port_open():
                 return
             time.sleep(1)
