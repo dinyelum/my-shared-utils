@@ -31,23 +31,23 @@ class SSHTunnel:
             atexit.register(self.stop)
             self.atexit_registered = True
 
+        # 1. Do we have an active connection?
         if self.proc and self.proc.poll() is None:
-            return
+            if self.is_port_open():
+                return  # our own process, confirmed alive and listening
+            else:
+                print("Tunnel process is alive but port is unresponsive. Restarting...")
+                self.stop()
 
-        self.proc = subprocess.Popen(
-            [
-                "ssh",
-                "-N",
-                "-L", f"{self.local_port}:{self.destination_host}:{self.destination_port}",
-                self.server,
-                "-p", self.ssh_port,
-                "-o", "ExitOnForwardFailure=yes",
-                "-o", "ServerAliveInterval=20",
-                "-o", "ServerAliveCountMax=6",
-            ],
-            stdout=subprocess.DEVNULL,
-            stderr=open(self.ssh_log_file, "a"),
-        )
+        # 2. Is the port occupied by something that isn't us? (e.g. XAMPP)
+        if self.is_port_open():
+            raise RuntimeError(
+                f"""
+                Port {self.local_port} is already occupied by another process 
+                (not our tunnel). Refusing to start — check for a local service 
+                like XAMPP/MySQL bound to this port.
+                """
+            )
 
         # Wait until tunnel is usable
         for _ in range(10):
